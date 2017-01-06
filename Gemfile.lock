@@ -4,9 +4,11 @@ GEM
     addressable (2.5.0)
       public_suffix (~> 2.0, >= 2.0.2)
     buftok (0.2.0)
+    daemons (1.2.4)
     domain_name (0.5.20161129)
       unf (>= 0.0.5, < 1.0.0)
     equalizer (0.0.11)
+    eventmachine (1.2.1)
     faraday (0.10.1)
       multipart-post (>= 1.2, < 3)
     http (2.1.0)
@@ -22,9 +24,14 @@ GEM
       thread_safe (~> 0.3, >= 0.3.1)
     multipart-post (2.0.0)
     naught (1.1.0)
+    pg (0.19.0)
     public_suffix (2.0.4)
+    roauth (0.0.8)
     simple_oauth (0.3.1)
     thread_safe (0.3.5)
+    tweetstream (1.0.5)
+      daemons
+      twitter-stream
     twitter (6.0.0)
       addressable (~> 2.5)
       buftok (~> 0.2.0)
@@ -35,6 +42,9 @@ GEM
       memoizable (~> 0.4.2)
       naught (~> 1.1)
       simple_oauth (~> 0.3.1)
+    twitter-stream (0.1.12)
+      eventmachine (>= 0.12.8)
+      roauth (>= 0.0.2)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.2)
@@ -43,6 +53,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  pg
+  tweetstream
   twitter
 
 BUNDLED WITH

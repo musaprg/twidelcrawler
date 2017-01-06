@@ -1,0 +1,13 @@
+twitter:
+  consumer_key: hogehoge
+  consumer_secret: fugafuga
+  access_token: piyopiyo
+  access_token_secret: yeahhhhhhhhh
+
+db:
+  product:
+    host: localhost
+    user: hoge
+    password: fuga
+    dbname: foobar
+    port: 5432
