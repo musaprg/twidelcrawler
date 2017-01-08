@@ -57,8 +57,6 @@ stream.user do |status|
         connection.exec("UPDATE detect_per_user SET boolean = 1 WHERE user_id = #{status.user.id}")
       end
     end
-    str = username + ":" + contents
-    puts str
   when Twitter::Streaming::DeletedTweet then
     user = rest.user(status.user_id)
     dbdata = connection.exec("SELECT * FROM detect_per_user WHERE user_id = #{user.id}")
@@ -72,4 +70,4 @@ stream.user do |status|
 end
 
 # close db connection
-connection.finish if @connection
+connection.finish if connection
