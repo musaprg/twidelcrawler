@@ -37,10 +37,10 @@ end
 stream.user do |status|
   case status
   when Twitter::Tweet then
-    username = status.user.screen_name
-    contents = status.text
-    str = username + ":" + contents
-    puts str
+    # username = status.user.screen_name
+    # contents = status.text
+    # str = username + ":" + contents
+    # puts str
   when Twitter::Streaming::DeletedTweet then
     user = rest.user(status.user_id)
     # とりあえずDBに関しては放置
