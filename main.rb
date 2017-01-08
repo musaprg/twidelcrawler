@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require 'pg'
+#require 'pg'
 require 'yaml'
 require 'twitter'
 # require 'net/https'
@@ -25,6 +25,11 @@ stream = Twitter::Streaming::Client.new do |config|
   config.access_token_secret = twconf["access_token_secret"]
 end
 
+# initialize db connection
+# connection = PG::connect(@dbconf)
+#
+# connection.exec("S")
+
 stream.user do |status|
   case status
   when Twitter::Tweet then
@@ -38,7 +43,5 @@ stream.user do |status|
   end
 end
 
-# initialize db connection
-connection = PG::connect(@dbconf)
 # close db connection
-connection.finish if @connection
+# connection.finish if @connection
