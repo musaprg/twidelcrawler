@@ -67,13 +67,13 @@ stream.user do |status|
     result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
     rest.update("【#{Time.now.to_s}】#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。") if user.id != 817254158839332865
   when Twitter::Streaming::Event then
-    if status.name == "follow"
-      rest.follow(status.source.screen_name) if status.source.screen_name != myinfo.screen_name
+    if status.name == :follow
+      rest.follow(status.source.id) if status.source.id != myinfo.id
     end
   # else
   #   # デバッグ用
   #   p status
-  end
+  # end
 end
 
 # close db connection
