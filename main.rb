@@ -27,6 +27,10 @@ end
 verify_credentials = rest.verify_credentials
 myinfo = rest.user(verify_credentials.id)
 
+puts("Bot's screen_name is \"#{myinfo.screen_name}\"")
+
+puts("Initialize DB Connection")
+
 # initialize db connection
 connection = PG::connect(@dbconf)
 is_table = connection.exec("SELECT relname FROM pg_class WHERE relkind = 'r' AND relname = 'detect_per_user'")
@@ -39,22 +43,32 @@ if is_table.ntuples == 0
   );")
 end
 
+puts("DB connection established")
+
+puts("Start Crawling...")
+
 stream.user do |status|
   case status
   when Twitter::Tweet then
     username = status.user.screen_name
     contents = status.text
     #リプライの場合
-    if (contents.match(/^@#{myinfo.screen_name}\s*$/))
+    if (contents.match(/^@#{myinfo.screen_name}\s/))
       if(contents.match(/やめて/))
         # 監視するのをやめる
-        rest.update("@#{status.screen_name} 解除したよ。")
-        connection.exec("UPDATE detect_per_user SET boolean = 0 WHERE user_id = #{status.user.id}")
-      end
-      if(constents.match(/みてて/))
+        rest.update("@#{status.user.screen_name} ごめんね、解除したよ。また見てほしかったら\"監視して\"って言ってね。【#{Time.now.to_s}】")
+        connection.exec("UPDATE detect_per_user SET accept = FALSE WHERE user_id = #{status.user.id}")
+      elsif(contents.match(/(.)@[0-9a-zA-Z_]{1,15}を監視/))
+        # 特定ユーザーをフォローした上で監視
+        target_user = contents.match(/(.)@[0-9a-zA-Z_]{1,15}/)
+        target_user = target_user.to_s
+        target_user.slice!(/@/)
+        rest.follow(target_user)
+        rest.update("@#{status.user.screen_name} @#{target_user}の監視を開始したよ。【#{Time.now.to_s}】")
+      elsif(contents.match(/監視して/))
         # 監視する
-        rest.update("@#{status.screen_name} いつも見てるよ。")
-        connection.exec("UPDATE detect_per_user SET boolean = 1 WHERE user_id = #{status.user.id}")
+        rest.update("@#{status.user.screen_name} いつも見てるよ。【#{Time.now.to_s}】")
+        connection.exec("UPDATE detect_per_user SET accept = TRUE WHERE user_id = #{status.user.id}")
       end
     end
   when Twitter::Streaming::DeletedTweet then
@@ -63,9 +77,15 @@ stream.user do |status|
     if dbdata.ntuples == 0
       connection.exec("INSERT INTO detect_per_user (user_id) VALUES (#{user.id})")
     end
-    connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
-    result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
-    rest.update("【#{Time.now.to_s}】#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。") if user.id != 817254158839332865
+    # p dbdata[0]["accept"]
+    # puts dbdata[0]["accept"]
+    if dbdata.ntuples == 0 || dbdata[0]["accept"] == "t"
+      connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
+      result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
+      rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
+    else
+      # puts("accept is false")
+    end
   when Twitter::Streaming::Event then
     if status.name == :follow
       rest.follow(status.source.id) if status.source.id != myinfo.id
