@@ -73,7 +73,7 @@ stream.user do |status|
   # else
   #   # デバッグ用
   #   p status
-  # end
+  end
 end
 
 # close db connection
