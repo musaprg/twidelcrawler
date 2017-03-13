@@ -93,8 +93,8 @@ stream.user do |status|
     # puts dbdata[0]["accept"]
     if dbdata.ntuples == 0 || dbdata[0]["accept"] == "t"
       retweet_status = connection.exec("SELECT tweet_status from tweet_info WHERE tweet_id = #{status.id}")
-      p "retweet_status is #{retweet_status}"
-      unless retweet_status
+      p "retweet_status is #{tweet_status}"
+      if retweet_status[0]["tweet_status"] == 'f'
         connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
         result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
         rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
