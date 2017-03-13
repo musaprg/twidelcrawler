@@ -9,25 +9,23 @@ require 'twitter'
 # require 'json'
 
 # twconf = YAML.load_file("config.yml")["twitter"]
+# dbconf = YAML.load_file("config.yml")["db"]["product"]
 dbconf = {
   dbname: "mrmita_tweetinfo",
   port: 5432
 }
 
+config = {
+  consumer_key: ENV['MITA_CK'],
+  consumer_secret: ENV['MITA_CS'],
+  access_token: ENV['MITA_AT'],
+  access_token_secret: ENV['MITA_ATS']
+}
 
-rest = Twitter::REST::Client.new do |config|
-  config.consumer_key        = ENV['MITA_CONSUMERKEY']
-  config.consumer_secret     = ENV['MITA_CONSUMERSECRET']
-  config.access_token        = ENV['MITA_AT']
-  config.access_token_secret = ENV['MITA_ATC']
-end
+p config
 
-stream = Twitter::Streaming::Client.new do |config|
-  config.consumer_key        = ENV['MITA_CONSUMERKEY']
-  config.consumer_secret     = ENV['MITA_CONSUMERSECRET']
-  config.access_token        = ENV['MITA_AT']
-  config.access_token_secret = ENV['MITA_ATC']
-end
+rest = Twitter::REST::Client.new(config)
+stream = Twitter::Streaming::Client.new(config)
 
 # verify_credentials = rest.verify_credentials
 # myinfo = rest.user(verify_credentials.id)
@@ -47,12 +45,14 @@ if is_table.ntuples == 0
     accept    boolean   DEFAULT '1'\
   );")
 
+  # 削除済のツイートの詳細を確認することは出来ないのでTwitter::Tweetオブジェクトが降ってきた場合に
+  # ステータスを格納するテーブルを作成した。Twitter::Streaming::DeletedTweetオブジェクトが降ってきた
+  # 場合にこのテーブルから詳細データを取り出してやり、falseの場合のみツイ消しと判定するようにした。
+
   connection.exec("CREATE TABLE tweet_info (\
     id        serial    PRIMARY KEY,\
-    user_id   int8,\
     tweet_id int8,\
     tweet_status boolean,\
-    tweet_text  text\
   );")
 end
 
@@ -67,7 +67,7 @@ stream.user do |status|
   when Twitter::Tweet then
     username = status.user.screen_name
     contents = status.text
-    connection.exec("INSERT INTO tweet_info (user_id, tweet) VALUES (#{user.id}, #{status.id})")
+    connection.exec("INSERT INTO tweet_info (tweet_id, tweet_status) VALUES (#{status.id}, #{status.retweeted?})")
     
     #リプライの場合
     if (contents.match(/^@#{myinfo.screen_name}\s/))
