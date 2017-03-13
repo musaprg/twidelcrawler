@@ -93,7 +93,7 @@ stream.user do |status|
     # puts dbdata[0]["accept"]
     if dbdata.ntuples == 0 || dbdata[0]["accept"] == "t"
       retweet_status = connection.exec("SELECT tweet_status from tweet_info WHERE tweet_id = #{status.id}")
-      p "retweet_status is #{tweet_status}"
+      p "retweet_status is #{retweet_status}"
       if retweet_status[0]["tweet_status"] == 'f'
         connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
         result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
