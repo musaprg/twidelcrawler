@@ -1,41 +1,38 @@
 # encoding: utf-8
 
 require 'pg'
-# require 'yaml'
+require 'yaml'
 require 'twitter'
 # require 'net/https'
 # require 'oauth'
 # require 'cgi'
 # require 'json'
 
-# twconf = YAML.load_file("config.yml")["twitter"]
-# dbconf = YAML.load_file("config.yml")["db"]["product"]
-dbconf = {
-  dbname: "mrmita_tweetinfo",
-  port: 5432
-}
+twconf = YAML.load_file("config.yml")["twitter"]
+dbconf = YAML.load_file("config.yml")["db"]["development"]
 
-config = {
-  consumer_key: ENV['MITA_CK'],
-  consumer_secret: ENV['MITA_CS'],
-  access_token: ENV['MITA_AT'],
-  access_token_secret: ENV['MITA_ATS']
-}
 
-p config
+rest = Twitter::REST::Client.new do |config|
+  config.consumer_key        = twconf["consumer_key"]
+  config.consumer_secret     = twconf["consumer_secret"]
+  config.access_token        = twconf["access_token"]
+  config.access_token_secret = twconf["access_token_secret"]
+end
+stream = Twitter::Streaming::Client.new do |config|
+  config.consumer_key        = twconf["consumer_key"]
+  config.consumer_secret     = twconf["consumer_secret"]
+  config.access_token        = twconf["access_token"]
+  config.access_token_secret = twconf["access_token_secret"]
+end
+verify_credentials = rest.verify_credentials
+myinfo = rest.user(verify_credentials.id)
 
-rest = Twitter::REST::Client.new(config)
-stream = Twitter::Streaming::Client.new(config)
-
-# verify_credentials = rest.verify_credentials
-# myinfo = rest.user(verify_credentials.id)
-
-# puts("Bot's screen_name is \"#{myinfo.screen_name}\"")
+puts("Bot's screen_name is \"#{myinfo.screen_name}\"")
 
 puts("Initialize DB Connection")
 
 # initialize db connection
-connection = PG::connect(dbconf)
+connection = PG::connect(@dbconf)
 is_table = connection.exec("SELECT relname FROM pg_class WHERE relkind = 'r' AND relname = 'detect_per_user'")
 if is_table.ntuples == 0
   connection.exec("CREATE TABLE detect_per_user (\
@@ -44,19 +41,7 @@ if is_table.ntuples == 0
     count     int8      DEFAULT '0',\
     accept    boolean   DEFAULT '1'\
   );")
-
-  # 削除済のツイートの詳細を確認することは出来ないのでTwitter::Tweetオブジェクトが降ってきた場合に
-  # ステータスを格納するテーブルを作成した。Twitter::Streaming::DeletedTweetオブジェクトが降ってきた
-  # 場合にこのテーブルから詳細データを取り出してやり、falseの場合のみツイ消しと判定するようにした。
-
-  connection.exec("CREATE TABLE tweet_info (\
-    id        serial    PRIMARY KEY,\
-    tweet_id int8,\
-    tweet_status boolean,\
-  );")
 end
-
-
 
 puts("DB connection established")
 
@@ -67,8 +52,6 @@ stream.user do |status|
   when Twitter::Tweet then
     username = status.user.screen_name
     contents = status.text
-    connection.exec("INSERT INTO tweet_info (tweet_id, tweet_status) VALUES (#{status.id}, #{status.retweeted?})")
-    
     #リプライの場合
     if (contents.match(/^@#{myinfo.screen_name}\s/))
       if(contents.match(/やめて/))
@@ -97,7 +80,7 @@ stream.user do |status|
     # p dbdata[0]["accept"]
     # puts dbdata[0]["accept"]
     if dbdata.ntuples == 0 || dbdata[0]["accept"] == "t"
-      unless retweet_status = connection.exec("SELECT tweet_status from tweet_info WHERE tweet_id = #{status.id}")
+      if status.retweeted?
         connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
         result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
         rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
@@ -114,7 +97,6 @@ stream.user do |status|
   #   p status
   end
 end
-
 
 # close db connection
 connection.finish if connection
