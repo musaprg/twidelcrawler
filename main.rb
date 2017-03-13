@@ -60,6 +60,8 @@ stream.user do |status|
   when Twitter::Tweet then
     username = status.user.screen_name
     contents = status.text
+    p "statusID is #{status.id}"
+    p "retweeted? is #{status.retweeted?}"
     connection.exec("INSERT INTO tweet_info (tweet_id, tweet_status) VALUES (#{status.id}, #{status.retweeted?})")
     #リプライの場合
     if (contents.match(/^@#{myinfo.screen_name}\s/))
