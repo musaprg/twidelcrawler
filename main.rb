@@ -62,7 +62,7 @@ stream.user do |status|
     contents = status.text
     p "statusID is #{status.id}"
     p "retweeted? is #{status.retweeted?}"
-    connection.exec("INSERT INTO tweet_info (tweet_id, tweet_status) VALUES (#{status.id}, #{status.retweeted?})")
+    p connection.exec("INSERT INTO tweet_info (tweet_id, tweet_status) VALUES (#{status.id}, #{status.retweeted?})")
     #リプライの場合
     if (contents.match(/^@#{myinfo.screen_name}\s/))
       if(contents.match(/やめて/))
