@@ -80,11 +80,9 @@ stream.user do |status|
     # p dbdata[0]["accept"]
     # puts dbdata[0]["accept"]
     if dbdata.ntuples == 0 || dbdata[0]["accept"] == "t"
-      if status.retweeted?
-        connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
-        result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
-        rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
-      end
+      connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
+      result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
+      rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
     else
       # puts("accept is false")
     end
