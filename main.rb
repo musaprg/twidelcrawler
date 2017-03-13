@@ -47,7 +47,7 @@ if is_table.ntuples == 0
   connection.exec("CREATE TABLE tweet_info (\
     id        serial    PRIMARY KEY,\
     tweet_id   int8,\
-    tweet_status boolean,\
+    tweet_status boolean\
   );")
 end
 
