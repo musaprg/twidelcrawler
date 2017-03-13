@@ -42,6 +42,14 @@ if is_table.ntuples == 0
     accept    boolean   DEFAULT '1'\
   );")
 end
+is_table = connection.exec("SELECT relname FROM pg_class WHERE relkind = 'r' AND relname = 'tweet_info'")
+if is_table.ntuples == 0
+  connection.exec("CREATE TABLE tweet_info (\
+    id        serial    PRIMARY KEY,\
+    tweet_id   int8,\
+    tweet_status boolean,\
+  );")
+end
 
 puts("DB connection established")
 
@@ -52,6 +60,7 @@ stream.user do |status|
   when Twitter::Tweet then
     username = status.user.screen_name
     contents = status.text
+    connection.exec("INSERT INTO tweet_info (tweet_id, tweet_status) VALUES (#{status.id}, #{status.retweeted?})")
     #リプライの場合
     if (contents.match(/^@#{myinfo.screen_name}\s/))
       if(contents.match(/やめて/))
@@ -80,9 +89,11 @@ stream.user do |status|
     # p dbdata[0]["accept"]
     # puts dbdata[0]["accept"]
     if dbdata.ntuples == 0 || dbdata[0]["accept"] == "t"
-      connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
-      result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
-      rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
+      unless retweet_status = connection.exec("SELECT tweet_status from tweet_info WHERE tweet_id = #{status.id}")
+        connection.exec("UPDATE detect_per_user SET count=count+1 WHERE user_id = #{user.id}")
+        result = connection.exec("SELECT count FROM detect_per_user WHERE user_id = #{user.id}")
+        rest.update("#{user.name}(@#{user.screen_name})が#{result[0]["count"]}回目のツイ消しを行いました。【#{Time.now.to_s}】") if user.id != 817254158839332865
+      end
     else
       # puts("accept is false")
     end
