@@ -2,7 +2,6 @@
 source "https://rubygems.org"
 
 # gem "rails"
-gem "twitter"
 gem "tweetstream"
-gem "activerecord"
+gem "sequel"
 # gem "pg"
